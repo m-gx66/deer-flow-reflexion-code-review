@@ -20,3 +20,52 @@ deer-flow/
 ├── scripts/              # 根目录脚本，被根Makefile调用：环境检测、初始化向导、部署、nginx、docker、排障脚本
 ├── tests/                # 根目录测试，目前主要是 skills 相关测试
 └── docs/                 # 跨模块文档、方案设计、开发计划笔记
+
+yaml
+# ========== 沙箱配置（代码执行核心，Docker模式） ==========
+sandbox:
+  use: deerflow.sandbox.docker:DockerSandboxProvider
+  # 可选：关闭沙箱（不推荐，失去自动跑代码、验证能力）
+  # use: deerflow.sandbox.null:NullSandboxProvider
+  timeout: 300                       # 单段代码最大执行时长
+  memory_limit_mb: 2048              # 沙箱内存上限
+  cpu_limit: 1.0
+# ========== 工具开关（联网搜索等） ==========
+tools:
+  - use: deerflow.community.ddg_search:DDGSearchTool
+    enabled: true                    # true=允许联网搜索；false=断网模式
+  # 后续可以在这里加 tavily 搜索等其他工具
+# ========== Agent全局行为控制 ==========
+agent:
+  max_turns: 15                      # 一轮对话最多思考轮次，防止无限循环
+  enable_skill_evolution: false      # 自动生成技能，新手建议先关
+  max_subagents: 2                   # 子代理数量上限，别开太大吃资源
+# ========== 前端、网关基础（一般不用改） ==========
+gateway:
+  host: 0.0.0.0
+  port: 8001
+
+frontend:
+  port: 3000
+
+.en 格式，禁止上交git 存放密钥
+# 火山方舟 豆包配置
+LLM_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+LLM_BASE_URL=https://ark.cn-beijing.volces.com/api/v1
+LLM_MODEL=doubao-1-5-pro-32k
+
+# 可选：搜索工具密钥（tavily，不用就留空或者注释掉）
+# TAVILY_API_KEY=tvly-xxxxxx
+
+# 可选：LangSmith调试追踪（不懂就注释掉）
+# LANGSMITH_TRACING=true
+# LANGSMITH_API_KEY=lsv2_pt_xxxx
+
+常用修改速查表
+目标	                修改位置	                              说明
+换模型                	config.yaml model + .env LLM_MODEL	  复制方舟模型 ID
+降低幻觉、适合写代码   	temperature: 0.1~0.3	                越高越发散
+关闭联网搜索	          tools.enabled: false	                不访问外网
+关闭代码沙箱	          sandbox use 切换为 NullSandboxProvider	无法自动执行验证代码
+增加思考轮次	          max_turns	                            复杂任务调到 20
+解决超时	              request_timeout / sandbox timeout	    拉长至 600/900
